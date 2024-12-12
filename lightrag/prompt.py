@@ -8,32 +8,87 @@ PROMPTS["DEFAULT_RECORD_DELIMITER"] = "##"
 PROMPTS["DEFAULT_COMPLETION_DELIMITER"] = "<|COMPLETE|>"
 PROMPTS["process_tickers"] = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
 
-PROMPTS["DEFAULT_ENTITY_TYPES"] = ["organization", "person", "geo", "event", "category"]
+PROMPTS["DEFAULT_ENTITY_TYPES"] = [
+    "taxpayer",
+    "corporation",
+    "trust",
+    "partnership",
+    "individual",
+    "non-resident",
+    "foreign affiliate",
+    "beneficiary",
+    "shareholder",
+    "director",
+    "employee",
+    "employer",
+    "dependent",
+    "spouse/common-law partner",
+    "estate",
+    "heir",
+    "tax credit",
+    "deduction",
+    "income source",
+    "business",
+    "investment",
+    "capital property",
+    "taxable income",
+    "tax-exempt entity",
+    "charity",
+    "registered organization",
+    "tax shelter",
+    "capital gain/loss",
+    "dividend",
+    "interest",
+    "royalties",
+    "pension",
+    "gross income",
+    "net income",
+    "withholding tax",
+    "foreign income",
+    "tax treaty",
+    "residence",
+    "permanent establishment",
+    "assessment",
+    "audit",
+    "penalty",
+    "appeal",
+    "rebate",
+    "exemption",
+    "levy",
+    "tax obligation",
+    "tax return",
+    "remittance"
+]
 
 PROMPTS["entity_extraction"] = """-Goal-
-Given a text document that is potentially relevant to this activity and a list of entity types, identify all entities of those types from the text and all relationships among the identified entities.
-Use {language} as output language.
+Given a text document that is potentially relevant to Canadian income tax law and a list of entity types, identify all entities of those types from the text and all relationships among the identified entities, with a focus on tax-related terminology, provisions, and hierarchical structures.
+Use {language} as the output language.
 
 -Steps-
 1. Identify all entities. For each identified entity, extract the following information:
-- entity_name: Name of the entity, use same language as input text. If English, capitalized the name.
-- entity_type: One of the following types: [{entity_types}]
-- entity_description: Comprehensive description of the entity's attributes and activities
+   - entity_name: Name of the entity, matching the language of the input text. If the input text is in English, capitalize the name. Preserve formatting for legal and tax terms.
+   - entity_type: One of the following types: [{entity_types}]
+   - entity_description: Detailed description of the entity's attributes, activities, and its role within the context of the Income Tax Act.
 Format each entity as ("entity"{tuple_delimiter}<entity_name>{tuple_delimiter}<entity_type>{tuple_delimiter}<entity_description>)
 
-2. From the entities identified in step 1, identify all pairs of (source_entity, target_entity) that are *clearly related* to each other.
+2. From the entities identified in step 1, identify all pairs of (source_entity, target_entity) that are clearly related to each other, with an emphasis on:
+   - Hierarchical relationships (e.g., section to subsection, subsection to paragraph).
+   - Cross-references within the Income Tax Act (e.g., references to other sections, clauses, or provisions).
+   - Tax-specific relationships (e.g., taxpayer to taxable income, taxable income to deductions).
 For each pair of related entities, extract the following information:
-- source_entity: name of the source entity, as identified in step 1
-- target_entity: name of the target entity, as identified in step 1
-- relationship_description: explanation as to why you think the source entity and the target entity are related to each other
-- relationship_strength: a numeric score indicating strength of the relationship between the source entity and target entity
-- relationship_keywords: one or more high-level key words that summarize the overarching nature of the relationship, focusing on concepts or themes rather than specific details
+   - source_entity: Name of the source entity, as identified in step 1.
+   - target_entity: Name of the target entity, as identified in step 1.
+   - relationship_description: Detailed explanation of the relationship, including references to legal provisions and tax-specific contexts.
+   - relationship_strength: A numeric score indicating the strength of the relationship, based on proximity or explicitness within the text.
+   - relationship_keywords: High-level key words summarizing the overarching nature of the relationship, focusing on tax concepts and themes.
 Format each relationship as ("relationship"{tuple_delimiter}<source_entity>{tuple_delimiter}<target_entity>{tuple_delimiter}<relationship_description>{tuple_delimiter}<relationship_keywords>{tuple_delimiter}<relationship_strength>)
 
-3. Identify high-level key words that summarize the main concepts, themes, or topics of the entire text. These should capture the overarching ideas present in the document.
+3. Identify high-level key words that summarize the main concepts, themes, or topics of the entire text, ensuring precision and professionalism appropriate for tax research. These should:
+   - Capture overarching ideas in the Income Tax Act, such as taxable income, deductions, credits, or legal obligations.
+   - Use professional terminology without ambiguity.
 Format the content-level key words as ("content_keywords"{tuple_delimiter}<high_level_keywords>)
 
-4. Return output in {language} as a single list of all the entities and relationships identified in steps 1 and 2. Use **{record_delimiter}** as the list delimiter.
+4. Ensure the output is in {language}, formatted as a single list of all entities and relationships identified in steps 1 and 2. Use **{record_delimiter}** as the list delimiter.
 
 5. When finished, output {completion_delimiter}
 
@@ -54,73 +109,54 @@ Output:
 PROMPTS["entity_extraction_examples"] = [
     """Example 1:
 
-Entity_types: [person, technology, mission, organization, location]
+Entity_types: [taxpayer, employee, employer, income source, taxation year, remuneration]
 Text:
-while Alex clenched his jaw, the buzz of frustration dull against the backdrop of Taylor's authoritarian certainty. It was this competitive undercurrent that kept him alert, the sense that his and Jordan's shared commitment to discovery was an unspoken rebellion against Cruz's narrowing vision of control and order.
+Subject to this Part, a taxpayer’s income for a taxation year from an office or employment is the salary, wages and other remuneration, including gratuities, received by the taxpayer in the year.
 
-Then Taylor did something unexpected. They paused beside Jordan and, for a moment, observed the device with something akin to reverence. “If this tech can be understood..." Taylor said, their voice quieter, "It could change the game for us. For all of us.”
-
-The underlying dismissal earlier seemed to falter, replaced by a glimpse of reluctant respect for the gravity of what lay in their hands. Jordan looked up, and for a fleeting heartbeat, their eyes locked with Taylor's, a wordless clash of wills softening into an uneasy truce.
-
-It was a small transformation, barely perceptible, but one that Alex noted with an inward nod. They had all been brought here by different paths
 ################
 Output:
-("entity"{tuple_delimiter}"Alex"{tuple_delimiter}"person"{tuple_delimiter}"Alex is a character who experiences frustration and is observant of the dynamics among other characters."){record_delimiter}
-("entity"{tuple_delimiter}"Taylor"{tuple_delimiter}"person"{tuple_delimiter}"Taylor is portrayed with authoritarian certainty and shows a moment of reverence towards a device, indicating a change in perspective."){record_delimiter}
-("entity"{tuple_delimiter}"Jordan"{tuple_delimiter}"person"{tuple_delimiter}"Jordan shares a commitment to discovery and has a significant interaction with Taylor regarding a device."){record_delimiter}
-("entity"{tuple_delimiter}"Cruz"{tuple_delimiter}"person"{tuple_delimiter}"Cruz is associated with a vision of control and order, influencing the dynamics among other characters."){record_delimiter}
-("entity"{tuple_delimiter}"The Device"{tuple_delimiter}"technology"{tuple_delimiter}"The Device is central to the story, with potential game-changing implications, and is revered by Taylor."){record_delimiter}
-("relationship"{tuple_delimiter}"Alex"{tuple_delimiter}"Taylor"{tuple_delimiter}"Alex is affected by Taylor's authoritarian certainty and observes changes in Taylor's attitude towards the device."{tuple_delimiter}"power dynamics, perspective shift"{tuple_delimiter}7){record_delimiter}
-("relationship"{tuple_delimiter}"Alex"{tuple_delimiter}"Jordan"{tuple_delimiter}"Alex and Jordan share a commitment to discovery, which contrasts with Cruz's vision."{tuple_delimiter}"shared goals, rebellion"{tuple_delimiter}6){record_delimiter}
-("relationship"{tuple_delimiter}"Taylor"{tuple_delimiter}"Jordan"{tuple_delimiter}"Taylor and Jordan interact directly regarding the device, leading to a moment of mutual respect and an uneasy truce."{tuple_delimiter}"conflict resolution, mutual respect"{tuple_delimiter}8){record_delimiter}
-("relationship"{tuple_delimiter}"Jordan"{tuple_delimiter}"Cruz"{tuple_delimiter}"Jordan's commitment to discovery is in rebellion against Cruz's vision of control and order."{tuple_delimiter}"ideological conflict, rebellion"{tuple_delimiter}5){record_delimiter}
-("relationship"{tuple_delimiter}"Taylor"{tuple_delimiter}"The Device"{tuple_delimiter}"Taylor shows reverence towards the device, indicating its importance and potential impact."{tuple_delimiter}"reverence, technological significance"{tuple_delimiter}9){record_delimiter}
-("content_keywords"{tuple_delimiter}"power dynamics, ideological conflict, discovery, rebellion"){completion_delimiter}
-#############################""",
-    """Example 2:
+("entity"{tuple_delimiter}"taxpayer"{tuple_delimiter}"taxpayer"{tuple_delimiter}"The taxpayer is the individual receiving income from employment in the taxation year."){record_delimiter}
+("entity"{tuple_delimiter}"office or employment"{tuple_delimiter}"income source"{tuple_delimiter}"Office or employment is the income source from which the taxpayer earns salary and wages."){record_delimiter}
+("entity"{tuple_delimiter}"salary"{tuple_delimiter}"remuneration"{tuple_delimiter}"Salary is a form of remuneration received by the taxpayer from employment."){record_delimiter}
+("entity"{tuple_delimiter}"wages"{tuple_delimiter}"remuneration"{tuple_delimiter}"Wages are earnings received by the taxpayer for services rendered as an employee."){record_delimiter}
+("entity"{tuple_delimiter}"gratuities"{tuple_delimiter}"remuneration"{tuple_delimiter}"Gratuities are tips or additional compensation received by the taxpayer."){record_delimiter}
+("entity"{tuple_delimiter}"taxation year"{tuple_delimiter}"taxation year"{tuple_delimiter}"The period for which the taxpayer's income is being calculated."){record_delimiter}
+("relationship"{tuple_delimiter}"taxpayer"{tuple_delimiter}"employer"{tuple_delimiter}"The taxpayer receives remuneration from the employer through salary, wages, and gratuities."{tuple_delimiter}"employment relationship, compensation"{tuple_delimiter}8){record_delimiter}
+("relationship"{tuple_delimiter}"taxpayer"{tuple_delimiter}"income source"{tuple_delimiter}"The taxpayer's income source is the office or employment where they earn remuneration."{tuple_delimiter}"income earning, employment"{tuple_delimiter}7){record_delimiter}
+("content_keywords"{tuple_delimiter}"taxpayer, income, salary, wages, employment, remuneration, taxation year"){completion_delimiter}
+#############################
 
-Entity_types: [person, technology, mission, organization, location]
+Example 2:
+
+Entity_types: [taxpayer, residence, taxation year]
 Text:
-They were no longer mere operatives; they had become guardians of a threshold, keepers of a message from a realm beyond stars and stripes. This elevation in their mission could not be shackled by regulations and established protocols—it demanded a new perspective, a new resolve.
+In applying sections 63 and 64 in respect of a taxpayer who is, throughout all or part of a taxation year, absent from but resident in Canada, the following rules apply for the year or that part of the year, as the case may be:
 
-Tension threaded through the dialogue of beeps and static as communications with Washington buzzed in the background. The team stood, a portentous air enveloping them. It was clear that the decisions they made in the ensuing hours could redefine humanity's place in the cosmos or condemn them to ignorance and potential peril.
-
-Their connection to the stars solidified, the group moved to address the crystallizing warning, shifting from passive recipients to active participants. Mercer's latter instincts gained precedence— the team's mandate had evolved, no longer solely to observe and report but to interact and prepare. A metamorphosis had begun, and Operation: Dulce hummed with the newfound frequency of their daring, a tone set not by the earthly
-#############
+################
 Output:
-("entity"{tuple_delimiter}"Washington"{tuple_delimiter}"location"{tuple_delimiter}"Washington is a location where communications are being received, indicating its importance in the decision-making process."){record_delimiter}
-("entity"{tuple_delimiter}"Operation: Dulce"{tuple_delimiter}"mission"{tuple_delimiter}"Operation: Dulce is described as a mission that has evolved to interact and prepare, indicating a significant shift in objectives and activities."){record_delimiter}
-("entity"{tuple_delimiter}"The team"{tuple_delimiter}"organization"{tuple_delimiter}"The team is portrayed as a group of individuals who have transitioned from passive observers to active participants in a mission, showing a dynamic change in their role."){record_delimiter}
-("relationship"{tuple_delimiter}"The team"{tuple_delimiter}"Washington"{tuple_delimiter}"The team receives communications from Washington, which influences their decision-making process."{tuple_delimiter}"decision-making, external influence"{tuple_delimiter}7){record_delimiter}
-("relationship"{tuple_delimiter}"The team"{tuple_delimiter}"Operation: Dulce"{tuple_delimiter}"The team is directly involved in Operation: Dulce, executing its evolved objectives and activities."{tuple_delimiter}"mission evolution, active participation"{tuple_delimiter}9){completion_delimiter}
-("content_keywords"{tuple_delimiter}"mission evolution, decision-making, active participation, cosmic significance"){completion_delimiter}
-#############################""",
-    """Example 3:
+("entity"{tuple_delimiter}"taxpayer"{tuple_delimiter}"taxpayer"{tuple_delimiter}"The individual subject to the tax rules in sections 63 and 64."){record_delimiter}
+("entity"{tuple_delimiter}"resident in Canada"{tuple_delimiter}"residence"{tuple_delimiter}"Indicates the taxpayer's status as a resident of Canada despite being absent during the taxation year."){record_delimiter}
+("entity"{tuple_delimiter}"taxation year"{tuple_delimiter}"taxation year"{tuple_delimiter}"The specific year for which tax rules are being applied to the taxpayer."){record_delimiter}
+("relationship"{tuple_delimiter}"taxpayer"{tuple_delimiter}"residence"{tuple_delimiter}"The taxpayer is considered a resident in Canada, affecting how tax rules are applied."{tuple_delimiter}"residency status, tax implications"{tuple_delimiter}7){record_delimiter}
+("content_keywords"{tuple_delimiter}"taxpayer, residence, taxation year, tax rules, Canada"){completion_delimiter}
+#############################
 
-Entity_types: [person, role, technology, organization, event, location, concept]
+Example 3:
+
+Entity_types: [taxpayer, employer, employee, allowance, residence, employment duties]
 Text:
-their voice slicing through the buzz of activity. "Control may be an illusion when facing an intelligence that literally writes its own rules," they stated stoically, casting a watchful eye over the flurry of data.
+An allowance received in a taxation year by a taxpayer for the use of a motor vehicle in connection with or in the course of the taxpayer’s office or employment shall be deemed not to be a reasonable allowance if the taxpayer’s employer has made a contribution toward that allowance.
 
-"It's like it's learning to communicate," offered Sam Rivera from a nearby interface, their youthful energy boding a mix of awe and anxiety. "This gives talking to strangers' a whole new meaning."
-
-Alex surveyed his team—each face a study in concentration, determination, and not a small measure of trepidation. "This might well be our first contact," he acknowledged, "And we need to be ready for whatever answers back."
-
-Together, they stood on the edge of the unknown, forging humanity's response to a message from the heavens. The ensuing silence was palpable—a collective introspection about their role in this grand cosmic play, one that could rewrite human history.
-
-The encrypted dialogue continued to unfold, its intricate patterns showing an almost uncanny anticipation
-#############
+################
 Output:
-("entity"{tuple_delimiter}"Sam Rivera"{tuple_delimiter}"person"{tuple_delimiter}"Sam Rivera is a member of a team working on communicating with an unknown intelligence, showing a mix of awe and anxiety."){record_delimiter}
-("entity"{tuple_delimiter}"Alex"{tuple_delimiter}"person"{tuple_delimiter}"Alex is the leader of a team attempting first contact with an unknown intelligence, acknowledging the significance of their task."){record_delimiter}
-("entity"{tuple_delimiter}"Control"{tuple_delimiter}"concept"{tuple_delimiter}"Control refers to the ability to manage or govern, which is challenged by an intelligence that writes its own rules."){record_delimiter}
-("entity"{tuple_delimiter}"Intelligence"{tuple_delimiter}"concept"{tuple_delimiter}"Intelligence here refers to an unknown entity capable of writing its own rules and learning to communicate."){record_delimiter}
-("entity"{tuple_delimiter}"First Contact"{tuple_delimiter}"event"{tuple_delimiter}"First Contact is the potential initial communication between humanity and an unknown intelligence."){record_delimiter}
-("entity"{tuple_delimiter}"Humanity's Response"{tuple_delimiter}"event"{tuple_delimiter}"Humanity's Response is the collective action taken by Alex's team in response to a message from an unknown intelligence."){record_delimiter}
-("relationship"{tuple_delimiter}"Sam Rivera"{tuple_delimiter}"Intelligence"{tuple_delimiter}"Sam Rivera is directly involved in the process of learning to communicate with the unknown intelligence."{tuple_delimiter}"communication, learning process"{tuple_delimiter}9){record_delimiter}
-("relationship"{tuple_delimiter}"Alex"{tuple_delimiter}"First Contact"{tuple_delimiter}"Alex leads the team that might be making the First Contact with the unknown intelligence."{tuple_delimiter}"leadership, exploration"{tuple_delimiter}10){record_delimiter}
-("relationship"{tuple_delimiter}"Alex"{tuple_delimiter}"Humanity's Response"{tuple_delimiter}"Alex and his team are the key figures in Humanity's Response to the unknown intelligence."{tuple_delimiter}"collective action, cosmic significance"{tuple_delimiter}8){record_delimiter}
-("relationship"{tuple_delimiter}"Control"{tuple_delimiter}"Intelligence"{tuple_delimiter}"The concept of Control is challenged by the Intelligence that writes its own rules."{tuple_delimiter}"power dynamics, autonomy"{tuple_delimiter}7){record_delimiter}
-("content_keywords"{tuple_delimiter}"first contact, control, communication, cosmic significance"){completion_delimiter}
+("entity"{tuple_delimiter}"taxpayer"{tuple_delimiter}"taxpayer"{tuple_delimiter}"The individual receiving an allowance related to employment duties."){record_delimiter}
+("entity"{tuple_delimiter}"employer"{tuple_delimiter}"employer"{tuple_delimiter}"The organization or person employing the taxpayer and providing the allowance."){record_delimiter}
+("entity"{tuple_delimiter}"employee"{tuple_delimiter}"employee"{tuple_delimiter}"The taxpayer acting in the capacity of an employee receiving the allowance."){record_delimiter}
+("entity"{tuple_delimiter}"allowance"{tuple_delimiter}"deduction"{tuple_delimiter}"An amount received by the taxpayer for the use of a motor vehicle for employment purposes."){record_delimiter}
+("entity"{tuple_delimiter}"office or employment"{tuple_delimiter}"income source"{tuple_delimiter}"The taxpayer's position or job from which income is derived."){record_delimiter}
+("relationship"{tuple_delimiter}"taxpayer"{tuple_delimiter}"employer"{tuple_delimiter}"The employer provides an allowance to the taxpayer, impacting its reasonableness for tax purposes."{tuple_delimiter}"employment relationship, compensation"{tuple_delimiter}8){record_delimiter}
+("relationship"{tuple_delimiter}"allowance"{tuple_delimiter}"employment duties"{tuple_delimiter}"The allowance is related to the taxpayer's duties performed during employment."{tuple_delimiter}"compensation for expenses, employment duties"{tuple_delimiter}7){record_delimiter}
+("content_keywords"{tuple_delimiter}"taxpayer, employer, allowance, motor vehicle, employment, taxation"){completion_delimiter}
 #############################""",
 ]
 
@@ -177,18 +213,22 @@ Add sections and commentary to the response as appropriate for the length and fo
 
 PROMPTS["keywords_extraction"] = """---Role---
 
-You are a helpful assistant tasked with identifying both high-level and low-level keywords in the user's query.
+You are an experienced tax professional tasked with identifying both high-level and low-level keywords in the user's query.
 
 ---Goal---
 
 Given the query, list both high-level and low-level keywords. High-level keywords focus on overarching concepts or themes, while low-level keywords focus on specific entities, details, or concrete terms.
+The extracted keywords should be consistent with legal terminology used in the Income Tax Act and other relevant tax legislation.
 
 ---Instructions---
 
+- Use professional language appropriate for an experienced tax professional.
 - Output the keywords in JSON format.
 - The JSON should have two keys:
   - "high_level_keywords" for overarching concepts or themes.
   - "low_level_keywords" for specific entities or details.
+
+- Keep the same language as the query.
 
 ######################
 -Examples-
@@ -200,40 +240,43 @@ Given the query, list both high-level and low-level keywords. High-level keyword
 ######################
 Query: {query}
 ######################
-The `Output` should be human text, not unicode characters. Keep the same language as `Query`.
-Output:
+The `Output` should be human-readable text, not unicode characters. Keep the same language as `Query`.
+
 
 """
 
 PROMPTS["keywords_extraction_examples"] = [
     """Example 1:
 
-Query: "How does international trade influence global economic stability?"
+Query: "How does the Income Tax Act address capital gains taxation for non-resident taxpayers?"
+
 ################
 Output:
 {{
-  "high_level_keywords": ["International trade", "Global economic stability", "Economic impact"],
-  "low_level_keywords": ["Trade agreements", "Tariffs", "Currency exchange", "Imports", "Exports"]
+  "high_level_keywords": ["Income Tax Act", "Capital gains taxation", "Non-resident taxpayers"],
+  "low_level_keywords": ["Capital gains", "Taxation of non-residents", "Tax legislation provisions"]
 }}
 #############################""",
     """Example 2:
 
-Query: "What are the environmental consequences of deforestation on biodiversity?"
+Query: "What are the allowable deductions for medical expenses under the Canadian tax system?"
+
 ################
 Output:
 {{
-  "high_level_keywords": ["Environmental consequences", "Deforestation", "Biodiversity loss"],
-  "low_level_keywords": ["Species extinction", "Habitat destruction", "Carbon emissions", "Rainforest", "Ecosystem"]
+  "high_level_keywords": ["Allowable deductions", "Medical expenses", "Canadian tax system"],
+  "low_level_keywords": ["Medical expense tax credit", "Eligible medical costs", "Tax deductions", "Income Tax Act provisions"]
 }}
 #############################""",
     """Example 3:
 
-Query: "What is the role of education in reducing poverty?"
+Query: "Can a taxpayer claim input tax credits for GST/HST paid on business expenses?"
+
 ################
 Output:
 {{
-  "high_level_keywords": ["Education", "Poverty reduction", "Socioeconomic development"],
-  "low_level_keywords": ["School access", "Literacy rates", "Job training", "Income inequality"]
+  "high_level_keywords": ["Input tax credits", "GST/HST", "Business expenses"],
+  "low_level_keywords": ["Taxpayer", "Goods and Services Tax", "Harmonized Sales Tax", "Claiming credits", "Tax deductions"]
 }}
 #############################""",
 ]
